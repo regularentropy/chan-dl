@@ -18,7 +18,7 @@ jobs:
             artifact_name: chan-dl-linux
           - os: windows-latest
             platform: windows
-            artifact_name: chan-dl-windows.exe
+            artifact_name: chan-dl-windows
 
     runs-on: ${{ matrix.os }}
 
