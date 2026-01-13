@@ -56,11 +56,11 @@ jobs:
 
     - name: List build output (Linux)
       if: runner.os == 'Linux'
-      run: ls -la build/main/
+      run: ls -la dist/
 
     - name: List build output (Windows)
       if: runner.os == 'Windows'
-      run: dir build\main\
+      run: dir dist\
       shell: cmd
 
     - name: Upload artifact (Linux)
@@ -68,7 +68,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
-        path: build/main/main
+        path: dist/chan-dl
         if-no-files-found: error
 
     - name: Upload artifact (Windows)
@@ -76,7 +76,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
-        path: build/main/main.exe
+        path: dist/chan-dl.exe
         if-no-files-found: error
 
   release:
