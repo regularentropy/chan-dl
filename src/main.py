@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
         # Connect signals
         self.download_thread.progress_update.connect(progress_dialog.update_progress)
         self.download_thread.finished.connect(
-            lambda success: self.download_finished(success, progress_dialog)
+            lambda success: self.download_finished(success, progress_dialog, thread_dir)
         )
         progress_dialog.cancel_button.clicked.connect(
             lambda: self.cancel_download(progress_dialog)
@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
     def open_folder(self, folder_path):
         """Open the folder in the system's file manager"""
         try:
+            folder_path = os.path.normpath(folder_path)
             system = platform.system()
             if system == "Windows":
                 subprocess.run(["explorer", folder_path])
@@ -114,14 +115,14 @@ class MainWindow(QMainWindow):
         except Exception as e:
             show_error(self, f"Could not open folder: {str(e)}")
 
-    def download_finished(self, success, dialog):
+    def download_finished(self, success, dialog, thread_dir):
         dialog.accept()
         if success:
             msg_box = SuccessDialog(self)
             msg_box.exec()
 
             if msg_box.was_open_folder_clicked():
-                self.open_folder(self.download_thread.folder_path)
+                self.open_folder(thread_dir)
         else:
             show_warning(self, "Cancelled", "Download was cancelled")
 
