@@ -1,0 +1,94 @@
+name: Build Executables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: chan-dl-linux
+          - os: windows-latest
+            platform: windows
+            artifact_name: chan-dl-windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install uv (Linux)
+      if: runner.os == 'Linux'
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Install uv (Windows)
+      if: runner.os == 'Windows'
+      run: irm https://astral.sh/uv/install.ps1 | iex
+      shell: powershell
+
+    - name: Add uv to PATH (Windows)
+      if: runner.os == 'Windows'
+      run: echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: powershell
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Install PyInstaller
+      run: uv pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: uv run pyinstaller main.spec
+
+    - name: List build output (Linux)
+      if: runner.os == 'Linux'
+      run: ls -la dist/
+
+    - name: List build output (Windows)
+      if: runner.os == 'Windows'
+      run: dir dist\
+      shell: cmd
+
+    - name: Upload artifact (Linux)
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/chan-dl
+        if-no-files-found: error
+
+    - name: Upload artifact (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/chan-dl.exe
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: artifacts/**/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
